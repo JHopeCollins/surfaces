@@ -26,18 +26,19 @@
 
    struct vec_t : public virtual hasdimension_t
   {
-      double   ***e=NULL;
+      double   ***e;
       int      arrays=0;
 
-      vec_t() {}
+      vec_t() {e=NULL;}
       vec_t( int d ){ dims=d; construct_levi_civita(); }
 
       virtual ~vec_t() { if( arrays ){ free(); } }
 
       virtual void malloc()
      {
-         int   i,j,k;
+         int   i,j;
 
+         e=NULL;
          e=new double**[dims];
 
          for( i=0; i<dims; i++ )
@@ -48,7 +49,7 @@
             for( j=0; j<dims; j++ )
            {
                e[i][j]=NULL;
-               e[i][j]=new double [dims];
+               e[i][j]=new double[dims];
            }
         }
          arrays=1;
@@ -76,6 +77,8 @@
      {
          int   i,j,k;
 
+         malloc();
+
          for( i=0; i<dims; i++ )
         {
             for( j=0; j<dims; j++ )
@@ -83,11 +86,12 @@
                for( k=0; k<dims; k++ )
               {
                   if( i==j || i==k || j==k ){           e[i][j][k]= 0.; }
-                  if( j==(i+1)%dims || k==(j+1)%dims ){ e[i][j][k]= 1.; }
-                  if( j==(i-1)%dims || k==(j-1)%dims ){ e[i][j][k]=-1.; }
+                  if( j==(i+1)%dims && k==(j+1)%dims ){ e[i][j][k]= 1.; }
+                  if( j==(i-1)%dims && k==(j-1)%dims ){ e[i][j][k]=-1.; }
               }
            }
         }
+         printf( "vec_t::levi() end\n" );
      }
 
       inline void eq( double *u, double *v )

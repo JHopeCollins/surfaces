@@ -9,15 +9,12 @@
 #define  DIMS  3
 
 // z = a + bx + cy + dxy + ex^2 + fy^2
-   struct quadratic_t
+   struct quadratic_t : public vec_t
   {
       double a, b, c, d, e, f;
 
-      vec_t vec;
-
       quadratic_t( double aa, double bb, double cc, double dd, double ee, double ff )
-            : a(aa), b(bb), c(cc), d(dd), e(ee), f(ff)
-     { vec=vec_t(DIMS); }
+            : a(aa), b(bb), c(cc), d(dd), e(ee), f(ff){ dims=DIMS; }
 
       inline double F(     double x, double y ){ return a + b*x + c*y + d*x*y +   e*x*x + f*y*y; }
       inline double dFx(   double x, double y ){ return     b   +       d * y +2.*e*x;           }
@@ -49,7 +46,7 @@
          double   t0[DIMS], t1[DIMS];
 
          tangent( p, t0, t1 );
-         vec.cross( n, t0, t1 );
+         cross( n, t0, t1 );
      }
 
   };
@@ -57,20 +54,19 @@
 
    int main()
   {
-/*
-      const int      npts  = 1500;
-      const int      ntest = 15;
+      const int      npts  = 50;
+      const int      npts2 = npts*npts;
+      const int      ntest = 5;
+      const int      ntest2= ntest*ntest;
       const int      nplot = 51;
 
-      const double   origin[2]={0.,0.};
-      const double   coeff[2] ={1.,0.};
 
-      const double   scale=0.001;
+      const double   scale=0.01;
 
-      const double   xmin=-3., xmax=3.;
-      const double   ymin=-1., ymax=10.;
+      const double   xmin=-1., xmax=1.;
+      const double   ymin=-1., ymax=1.;
 
-      int         i,j,k;
+      int             i,j,k;
       double       **x=NULL;
       double       **n=NULL;
       double      **nt=NULL;
@@ -85,7 +81,8 @@
 
       vec_t         vec(DIMS);
       rbf_f        *rbf=NULL;
-      quadratic_t   quad( origin, coeff );
+      quadratic_t   surf(1.,2.,3.,4.,5.,6.);
+      surf.construct_levi_civita();
 
       rbf= new rbf_biharmonic;
 //    rbf= new rbf_triharmonic();
@@ -101,31 +98,40 @@
    // allocate arrays
       v   = new double [DIMS];
       w   = new double [DIMS];
-      x   = new double*[npts ];
-      n   = new double*[npts ];
-      nt  = new double*[ntest];
-      xt0 = new double*[ntest];
-      xt1 = new double*[ntest];
-      xt2 = new double*[ntest];
+      x   = new double*[npts2 ];
+      n   = new double*[npts2 ];
+      nt  = new double*[ntest2];
+      xt0 = new double*[ntest2];
+      xt1 = new double*[ntest2];
+      xt2 = new double*[ntest2];
 
-      for( i=0; i<npts;  i++ ){ x[  i]=NULL; x[  i] = new double[DIMS]; }
-      for( i=0; i<npts;  i++ ){ n[  i]=NULL; n[  i] = new double[DIMS]; }
-      for( i=0; i<ntest; i++ ){ nt[ i]=NULL; nt[ i] = new double[DIMS]; }
-      for( i=0; i<ntest; i++ ){ xt0[i]=NULL; xt0[i] = new double[DIMS]; }
-      for( i=0; i<ntest; i++ ){ xt1[i]=NULL; xt1[i] = new double[DIMS]; }
-      for( i=0; i<ntest; i++ ){ xt2[i]=NULL; xt2[i] = new double[DIMS]; }
+      for( i=0; i<npts2;  i++ ){ x[  i]=NULL; x[  i] = new double[DIMS]; }
+      for( i=0; i<npts2;  i++ ){ n[  i]=NULL; n[  i] = new double[DIMS]; }
+      for( i=0; i<ntest2; i++ ){ nt[ i]=NULL; nt[ i] = new double[DIMS]; }
+      for( i=0; i<ntest2; i++ ){ xt0[i]=NULL; xt0[i] = new double[DIMS]; }
+      for( i=0; i<ntest2; i++ ){ xt1[i]=NULL; xt1[i] = new double[DIMS]; }
+      for( i=0; i<ntest2; i++ ){ xt2[i]=NULL; xt2[i] = new double[DIMS]; }
 
    // build point/normal cloud
-      dx = ( xmax - xmin )/( npts -1 );
-      s  = xmin;
+      dx=(xmax-xmin)/(npts-1);
+      dy=(ymax-ymin)/(npts-1);
       for( i=0; i<npts; i++ )
      {
-         x[i][0]=s;
-         x[i][1]=quad.y(s);
-         quad.normal( x[i][0], n[i] );
-         s+=dx;
+
+         for( j=0; j<npts; j++ )
+        {
+            k=index(i,j,npts);
+
+            x[k][0]=xmin+i*dx;
+            x[k][1]=ymin+j*dy;
+
+            x[k][2]=surf.F(x[k]);
+
+            surf.normal( x[k], n[k] );
+        }
      }
 
+/*
    // points to test surface reconstruction at
       ds= ( xmax - xmin )/(ntest-1.);
       ds= ( xmax - xmin - ds ) / (ntest-1.);
@@ -208,13 +214,15 @@
      }
 
 
+*/
+
    // deallocate pointers
-      for( i=0; i<npts;  i++ ){ delete[] x[  i]; x[  i]=NULL; }
-      for( i=0; i<npts;  i++ ){ delete[] n[  i]; n[  i]=NULL; }
-      for( i=0; i<ntest; i++ ){ delete[] nt[ i]; nt[ i]=NULL; }
-      for( i=0; i<ntest; i++ ){ delete[] xt0[i]; xt0[i]=NULL; }
-      for( i=0; i<ntest; i++ ){ delete[] xt1[i]; xt1[i]=NULL; }
-      for( i=0; i<ntest; i++ ){ delete[] xt2[i]; xt2[i]=NULL; }
+      for( i=0; i<npts2;  i++ ){ delete[] x[  i]; x[  i]=NULL; }
+      for( i=0; i<npts2;  i++ ){ delete[] n[  i]; n[  i]=NULL; }
+      for( i=0; i<ntest2; i++ ){ delete[] nt[ i]; nt[ i]=NULL; }
+      for( i=0; i<ntest2; i++ ){ delete[] xt0[i]; xt0[i]=NULL; }
+      for( i=0; i<ntest2; i++ ){ delete[] xt1[i]; xt1[i]=NULL; }
+      for( i=0; i<ntest2; i++ ){ delete[] xt2[i]; xt2[i]=NULL; }
 
       delete[]  v;    v=NULL;
       delete[]  w;    w=NULL;
@@ -227,7 +235,6 @@
 
       delete  rbf; rbf=NULL;
 
-*/
       return 0;
   }
 
