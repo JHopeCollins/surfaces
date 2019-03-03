@@ -93,7 +93,7 @@
          d[1] = sign*direction[1];
          return;
      }
-      
+
       void normal( double s, double n[2] )
      {
          double t[2];

@@ -5,13 +5,14 @@ set ytics
 
 set cbtics
 
-set title "Distance function";
+#set title "Distance function";
+set title "surface height";
 
-set xrange [ -3.0 :  3.0 ]
-set yrange [ -1.0 : 10.0 ]
+set xrange [ -3.0 : 3.0 ]
+set yrange [ -3.0 : 3.0 ]
 
 set pm3d interpolate 1,1
 
-splot 'distance.dat' using 1:2:3 with pm3d
+splot 'surface.dat' using 1:2:3 with pm3d
 
 pause -1

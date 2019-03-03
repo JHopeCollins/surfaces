@@ -77,7 +77,7 @@
      {
          int   i,j,k;
 
-         malloc();
+         if( !arrays){ malloc(); }
 
          for( i=0; i<dims; i++ )
         {
@@ -91,7 +91,6 @@
               }
            }
         }
-         printf( "vec_t::levi() end\n" );
      }
 
       inline void eq( double *u, double *v )
@@ -198,8 +197,14 @@
          return r;
      }
 
-      inline void cross( double *u, double *v, double *w )
+      inline void cross(  double *u, double *v, double *w )
      {
+         switch( dims )
+        {
+            case 2: cross2( u, v, w ); return;
+            case 3: cross3( u, v, w ); return;
+        }
+
          int       i,j,k;
          double   *n=NULL;
          n=new double[dims];
@@ -222,7 +227,21 @@
          n=NULL;
      }
 
-      inline void cross( double *u, double *v ){ cross( u, u, v ); }
+      inline void cross2( double *u, double *v, double *w )
+     {
+         u[0] = v[0]*w[1]-v[1]*w[0];
+         u[1] = 0.;
+         u[2] = 0.;
+     }
+
+      inline void cross3( double *u, double *v, double *w )
+     {
+         u[0] = v[1]*w[2] - v[2]*w[1];
+         u[1] = v[2]*w[0] - v[0]*w[2];
+         u[2] = v[0]*w[1] - v[1]*w[0];
+     }
+
+      inline void cross(  double *u, double *v ){ cross( u, u, v ); }
  };
 
 #endif

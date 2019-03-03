@@ -197,7 +197,7 @@
             printf("\n");
         }
 */
-         
+
          delete[] h;
          delete[] t;
      }
