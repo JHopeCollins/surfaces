@@ -1,4 +1,5 @@
 *.o
-*a.out
+*.out
 *.log
 *.dat
+data/pointclouds/*
