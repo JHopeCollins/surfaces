@@ -1,13 +1,10 @@
-#include <iostream>
+# include <iostream>
 
-#include <rbf.h>
-#include <rbf_surf.h>
+# include <constants.h>
+# include <rbf.h>
+# include <rbf_surf.h>
 
-#define DIMS 2
-
-# ifndef EPS
-# define EPS  10e-8
-# endif
+# define DIMS 2
 
    int main()
   {
@@ -34,7 +31,7 @@
 
       isurf.accuracy=EPS;
       isurf.set_RadialBasisFunction( rbf );
-      isurf.fread( (char*)"data/pointclouds/profile2Dunique" );
+      isurf.fread( (char*)"data/pointclouds/profile2D" );
 
       i=isurf.build_weights();
       std::cout << "lapack info: " << i << std::endl << std::endl;

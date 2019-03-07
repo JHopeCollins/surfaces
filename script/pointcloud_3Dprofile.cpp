@@ -19,8 +19,8 @@
       int         npoints;
 
 
-      FILE *fr=fopen( "data/pointclouds/profile2Dunique", "r" );
-      FILE *fw=fopen( "data/pointclouds/profile3Dunique", "w" );
+      FILE *fr=fopen( "data/pointclouds/profile2D", "r" );
+      FILE *fw=fopen( "data/pointclouds/profile3D", "w" );
 
       fscanf( fr, "%d\n", &i );         // dimension of pointcloud space
       fscanf( fr, "%d\n", &nprofile );   // number of points in cloud
