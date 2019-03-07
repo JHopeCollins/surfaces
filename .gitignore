@@ -2,4 +2,5 @@
 *.out
 *.log
 *.dat
-data/pointclouds/*
+data/pointclouds/
+progms/
