@@ -31,10 +31,11 @@
       points = new vtx_t[npoints];
       normal = new vtx_t[npoints];
 
-   // first point
+   // first unique point
       int n=0;
       blade.nearest( blade.y[0], z[0], z[1] );
       blade.pos( z[0], z[1], points[n], tangent );
+      points[n][2]=0.;
 
       normal[n] = cross( tangent[0], tangent[1] );
       normal[n]/= -length( normal[n] );
@@ -44,6 +45,7 @@
      {
          blade.nearest( blade.y[i], z[0], z[1] );
          blade.pos( z[0], z[1], points[n], tangent );
+         points[n][2]=0.;
 
          distance=length( points[n]-points[n-1] );
 
@@ -56,6 +58,25 @@
         }
      }
 
+   // calculate centre of gravity of weights and centre all weights
+      v = vtx_t(0.,0.,0.);
+      for( i=0; i<n; i++ ){ v+=points[i]; }
+      v/=(1.*n);
+      v[0]+=0.1;
+      v[1]+=0.6;
+
+      for( i=0; i<n; i++ ){ points[i]-=v; }
+
+
+   // calculate average distance of points from origin
+      distance=0.;
+      for( i=0; i<n; i++ ){ distance+=length( points[i] ); }
+      distance/=(1.*n);
+
+      for( i=0; i<n; i++ ){ points[i]/=distance; }
+
+   // scale points so average distance from origin is 1
+
       FILE *f=fopen( "data/pointclouds/profile2D", "w" );
       fprintf( f, "%d\n", 2 );         // dimension of pointcloud space
       fprintf( f, "%d\n", n );   // number of points in cloud
@@ -66,6 +87,7 @@
       fclose( f );
 
       delete[] points; points=NULL;
+      delete[] normal; normal=NULL;
 
       return 0;
   }

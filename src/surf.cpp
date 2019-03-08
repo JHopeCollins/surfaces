@@ -66,7 +66,7 @@
       double        *df=NULL;                   // derivative of distance field
       double        res=10000000.;             // newton iteration residual
       double        *rhs=NULL, *jac=NULL;            // right hand side and jacobian matrix for newton iterations
-      const double  rlx=1.0;               // relaxation factor
+      double         rlx=0.3;               // relaxation factor
       double        err=accuracy;    // convergence criteria
 
       if( F( p ) < err ){ eq(q,p); return; }
@@ -99,7 +99,7 @@
    // start newton iterations
       while( res>err )
      {
-         printf( "projection iteration: %d\n", j );
+//       printf( "projection iteration: %d\n", j );
       // construct rhs and jacobian
          newton_rhs( x0, nu, rhs, df );
          newton_jac( x0, nu, jac, df );
@@ -115,6 +115,10 @@
 
          vecd.mul( rhs, rlx );
          vecd.add( nu,  rhs );
+
+         rlx*=1.3;
+         rlx=std::min(rlx,1.0);
+
          j++;
      }
 
