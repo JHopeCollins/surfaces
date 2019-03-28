@@ -1,6 +1,7 @@
 # ifndef RBFINTERP_H
 # define RBFINTERP_H
 
+# include <cstdio>
 # include <iostream>
 # include <math.h>
 # include <assert.h>
@@ -228,6 +229,24 @@
       inline void hessian(     int np, POS_ *p0, VAL_ **d2y )
      {
          for( int i=0; i<np; i++ ){ hessian( p0[i], d2y[i] ); }
+     }
+
+      virtual void fread( FILE *f )
+     {
+       ::fread( &n, 1, sizeof(int ), f );
+         malloc();
+         delete[] val; val=nullptr;
+       ::fread( pt, n, sizeof(POS_), f );
+       ::fread(  w, n, sizeof(VAL_), f );
+         return;
+     }
+
+      virtual void fwrite( FILE *f )
+     {
+       ::fwrite( &n, 1, sizeof(int ), f );
+       ::fwrite( pt, n, sizeof(POS_), f );
+       ::fwrite(  w, n, sizeof(VAL_), f );
+         return;
      }
   };
 

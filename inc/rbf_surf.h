@@ -49,7 +49,7 @@
 
       void set_PointsNormals( POS_ *p, POS_ *norms );
 
-      void fread( char *name );
+      void freadPointCloud( char *name );
 
    // construct on surface points with zero distance function to interpolate
       void on_surface_points( POS_ *p, POS_ *norms );
@@ -68,6 +68,9 @@
 
    // q is projection of point p onto the surface to within err % of surface scale, calculated by walking down distance function gradient
       void project_bydistanceonly( POS_ p, POS_ &q );
+
+      void fread ( FILE *f );
+      void fwrite( FILE *f );
   };
 
 
@@ -124,7 +127,7 @@
   }
 
    template <int DIM_, typename POS_, typename VAL_>
-   void rbf_surf<DIM_, POS_, VAL_>::fread( char *name )
+   void rbf_surf<DIM_, POS_, VAL_>::freadPointCloud( char *name )
   {
       int i,j,k;
 
@@ -196,6 +199,20 @@
          this->pt[k+1] = this->pt[k] + scales[i]*norm[i];
          this->pt[k+2] = this->pt[k] - scales[i]*norm[i];
      }
+  }
+
+   template <int DIM_, typename POS_, typename VAL_>
+   void rbf_surf<DIM_, POS_, VAL_>::fwrite( FILE *f )
+  {
+      rbf_interp<DIM_,POS_,VAL_>::fwrite( f );
+    ::fwrite( &(this->accuracy), 1, sizeof(double), f );
+  }
+
+   template <int DIM_, typename POS_, typename VAL_>
+   void rbf_surf<DIM_, POS_, VAL_>::fread( FILE *f )
+  {
+      rbf_interp<DIM_,POS_,VAL_>::fread( f );
+    ::fread( &(this->accuracy), 1, sizeof(double), f );
   }
 
 

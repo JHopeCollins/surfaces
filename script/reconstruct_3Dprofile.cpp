@@ -20,19 +20,26 @@
 
 //    int         nplot=51;
 
-      rbf_surf<3, vtx_t, double> isurf;
+      rbf_surf<3, vtx_t, double> isurf0, isurf;
 
 
    // build surface
-      isurf.accuracy=EPS;
-      isurf.fread( (char*)"data/pointclouds/profile3D" );
+      isurf0.accuracy=EPS;
+      isurf0.freadPointCloud( (char*)"data/pointclouds/profile3D" );
 
-      i=isurf.build_weights();
+      i=isurf0.build_weights();
       std::cout << "lapack info: " << i << std::endl << std::endl;
 
+      FILE *f=fopen( "data/profile3Dsurf.bin", "w" );
+      isurf0.fwrite( f );
+      fclose( f );
+
+      f=fopen( "data/profile3Dsurf.bin", "r" );
+      isurf.fread( f );
+      fclose( f );
 
    // write surface points
-      FILE *f=fopen( "data/pointclouds/profile3Drbfpoints", "w" );
+      f=fopen( "data/pointclouds/profile3Drbfpoints", "w" );
       for( i=0; i<isurf.n; i++ )
      {
          fprintf( f, "%lf %lf %lf\n", isurf.pt[i][0], isurf.pt[i][1], isurf.pt[i][2] );
@@ -63,7 +70,7 @@
 
 
    // test projections
-      int ntest=isurf.m;
+      int ntest=isurf0.m;
       vtx_t *xt=new vtx_t[ntest], yt;
       double r=1.5;
    // generate points outside blade profile and project points onto blade profile
@@ -71,7 +78,7 @@
      {
          j=3*i;
 
-         yt = isurf.pt[j] + r*isurf.scales[i]*isurf.norm[i];
+         yt = isurf.pt[j] + r*isurf0.scales[i]*isurf0.norm[i];
          xt[i]=yt;
 
          //std::cout << "(" << xt[i][0] << ", " << xt[i][1] << ", " << xt[i][2] << ") ";
@@ -79,7 +86,7 @@
          isurf.project( xt[i], xt[i] );
 
          //std::cout << "(" <<       xt[i][0] << ", " <<       xt[i][1] <<  ", " <<       xt[i][2] << ") " << std::endl;
-         //std::cout << "(" << isurf.pt[j][0] << ", " << isurf.pt[j][1] <<  ", " << isurf.pt[j][2] << ") " << length( xt[i] - yt )/isurf.scales[i] << std::endl;
+         //std::cout << "(" << isurf.pt[j][0] << ", " << isurf.pt[j][1] <<  ", " << isurf.pt[j][2] << ") " << length( xt[i] - yt )/isurf0.scales[i] << std::endl;
      }
 
 
