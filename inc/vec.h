@@ -9,7 +9,7 @@
    extern "C" void dsysv_( char *, int *, int *, double *, int *, int *, double *, int *, double *, int *, int * );
 
 // index of 1D array aliasing column-major 2D array a[i][j] -> b[ index(i,j,imax) ]
-   inline int indx( int i, int j, int n ){ return i*n+j; }
+// inline int indx( int i, int j, int n ){ return i*n+j; }
 
 // base for any struct which needs to hold a dimension
    struct hasdimension_t
@@ -26,20 +26,10 @@
 
    struct vec_t : public virtual hasdimension_t
   {
-      double   ***e;
-      int      arrays=0;
+      vec_t(){}
+      vec_t( int d ){ dims=d; }
+      virtual ~vec_t() { }
 
-      vec_t() {e=NULL;}
-      vec_t( int d ){ dims=d; construct_levi_civita(); }
-
-      virtual ~vec_t() { if( arrays ){ free(); } }
-
-   // memory management for arrays
-      virtual void malloc();
-
-      virtual void free();
-
-      void construct_levi_civita();
 
       inline void eq( double *u, double *v )
      {
@@ -161,27 +151,6 @@
             case 2: cross2( u, v, w ); return;
             case 3: cross3( u, v, w ); return;
         }
-
-         int       i,j,k;
-         double   *n=NULL;
-         n=new double[dims];
-
-         eq(n, 0.);
-
-         for( i=0; i<dims; i++ )
-        {
-            for( j=0; j<dims; j++ )
-           {
-               for( k=0; k<dims; k++ )
-              {
-                  n[k]+= e[i][j][k]*v[i]*w[j];
-              }
-           }
-        }
-         eq( u, n );
-
-         delete[] n;
-         n=NULL;
      }
 
       inline void cross2( double *u, double *v, double *w )

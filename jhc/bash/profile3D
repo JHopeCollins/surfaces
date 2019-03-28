@@ -1,0 +1,14 @@
+#!/bin/bash
+
+make pointcloud_2Dprofile
+make pointcloud_3Dprofile
+make reconstruct_3Dprofile
+
+echo pointcloud_2Dprofile
+./progrm/pointcloud_2Dprofile.out
+
+echo pointcloud_3Dprofile
+./progrm/pointcloud_3Dprofile.out
+
+echo reconstruct_3Dprofile
+./progrm/reconstruct_3Dprofile.out

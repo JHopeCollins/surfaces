@@ -32,10 +32,10 @@
       const double   xmax=5.0;
 
 
-      double      **x;
+      vtx_t        *x;
       double       *y;
 
-      double       **xtest;
+      vtx_t         *xtest;
       double        *ytest;
       double      **dytest;
 
@@ -44,27 +44,14 @@
       int         i;
 
 
-//    rbf_multiquadratic     *rbf(SCALE);
-//    rbf_invmultiquadratic  *rbf(SCALE);
-//    rbf_thinplate          *rbf(SCALE);
-//    rbf_gaussian           *rbf(SCALE);
-//    rbf_biharmonic         *rbf;
-//    rbf_triharmonic        *rbf;
-
-      rbf_f *rbf;
-
    // allocate arrays
-      x      = new double*[npts];
+      x      = new vtx_t  [npts];
       y      = new double [npts];
-      xtest  = new double*[ntest];
+      xtest  = new vtx_t  [ntest];
       ytest  = new double [ntest];
       dytest = new double*[ntest];
 
-      for( i=0; i<npts;  i++ ){  x[    i] = new double[dims]; }
-      for( i=0; i<ntest; i++ ){  xtest[i] = new double[dims]; }
       for( i=0; i<ntest; i++ ){ dytest[i] = new double[dims]; }
-
-      rbf= new rbf_biharmonic;
 
    // absicca and interpolation values
       dx= ( xmax - xmin )/(npts-1.);
@@ -81,7 +68,7 @@
       for( i=0; i<ntest; i++ ){ xtest[i][0] = x0+i*dx; }
 
    // build interpolation
-      rbf_interp interpolation( 1, npts, x, y, rbf );
+      rbf_interp<1, vtx_t, double> interpolation( npts, x, y );
 
       i = interpolation.build_weights();
       std::cout << "info: " << i << std::endl;
@@ -116,8 +103,6 @@
      }
 
    // deallocate arrays
-      for( i=0; i<npts;  i++ ){ delete[]  x[    i]; }
-      for( i=0; i<ntest; i++ ){ delete[]  xtest[i]; }
       for( i=0; i<ntest; i++ ){ delete[] dytest[i]; }
 
       delete[]  x;
@@ -125,8 +110,6 @@
       delete[]  xtest;
       delete[]  ytest;
       delete[] dytest;
-
-      delete rbf;
 
       return 0;
   }

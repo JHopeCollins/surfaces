@@ -7,41 +7,36 @@
  */
 
 
-   rbf_interp::rbf_interp( int d, int nn, double **pts, double *vals, rbf_f *func )
+   rbf_interp<int DIM_, typename POS_, typename VAL_>::rbf_interp( int nn, POS_ *pts, VAL_ *vals )
   {
-      init( d, nn, pts, vals, func );
+      init( d, nn, pts, vals );
   }
 
-   void rbf_interp::init(  int d, int nn, double **pts, double *vals, rbf_f *func )
+   void rbf_interp<int DIM_, typename POS_, typename VAL_>::init( int nn, POS_ *pts, VAL_ *vals )
   {
       int i,j;
 
       n=nn;
-      dims=d;
-      rbf=func;
 
       malloc();
 
       for( i=0; i<n; i++ )
      {
          val[i] = vals[i];
-         for( j=0; j<dims; j++ ){ pt[i][j]=pts[i][j]; }
+         for( j=0; j<DIMS_; j++ ){ pt[i][j]=pts[i][j]; }
      }
   }
 
-   void rbf_interp::malloc()
+   void rbf_interp<int DIM_, typename POS_, typename VAL_>::malloc()
   {
-      w   = new double [n];
-      val = new double [n];
-      pt  = new double*[n];
-
-      for( int i=0; i<n; i++ ){ pt[i] = new double[dims]; }
+      w   = new VAL_ [n];
+      val = new VAL_ [n];
+      pt  = new POS_ [n];
       arrays=1;
   }
 
-   void rbf_interp::free()
+   void rbf_interp<int DIM_, typename POS_, typename VAL_>::free()
   {
-      for( int i=0; i<n; i++ ){ delete[] pt[i]; }
       delete[] pt;
       delete[] val;
       delete[] w;
@@ -49,22 +44,23 @@
   }
 
 // solve for the centre weights given the radial basis function definition
-   int rbf_interp::build_weights()
+   int rbf_interp<int DIM_, typename POS_, typename VAL_>::build_weights()
   {
       double      *rbf_mat;    // y( |r_i - r_j| )
       double      *rhs;
       double      v,r;
       int         i,j;
+      POS_          q;
 
       int  *ipiv;
       int  info;
 
       rbf_mat=new double[n*n];
-      rhs =new      double[n];
-      ipiv=new         int[n];
+      rhs    =new double[n];
+      ipiv   =new    int[n];
 
    // diagonals are y( |r_i - r_i| ) = y( 0 )
-      v = (*rbf)( 0. );
+      v = rbf( 0. );
       for( i=0; i<n; i++ )
      {
          j=indx(i,i,n);
@@ -83,8 +79,10 @@
      {
          for(j=0; j<n; j++ )
         {
-            r = radius( pt[i], pt[j] );
-            v = (*rbf)( r );
+            q = pt[i]-pt[j];
+            r = length( q );
+            
+            v = rbf( r );
             rbf_mat[ indx(i,j,n) ] = v;
         }
      }

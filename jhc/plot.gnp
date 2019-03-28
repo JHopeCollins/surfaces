@@ -1,0 +1,15 @@
+unset key
+
+set xtics
+set ytics
+
+set title "surface height";
+
+set xrange [ -3.0 : 3.0 ]
+set yrange [ -3.0 : 3.0 ]
+
+set pm3d interpolate 1,1
+
+splot 'surface.dat' using 1:2:3:4 with points pt 7 ps 1 palette
+
+pause -1

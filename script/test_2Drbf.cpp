@@ -4,46 +4,44 @@
 #include <stdlib.h>
 
 #include "rbf.h"
+#include "vtx.h"
 #include "rbf_surf.h"
 
 #define  DIMS  2
 
-   struct quadratic_t
+   template< typename POS_2, typename POS_1 >
+   struct quadratic_surf_t
   {
-      double   origin[2];
+      POS_2      origin;
       double   coeff[2];
 
-      vec_t    vec;
-
-      quadratic_t( const double o[2], const double c[2] )
+      quadratic_surf_t( POS_2 o, double c[2] )
      {
          origin[0]=o[0];
          origin[1]=o[1];
 
          coeff[0]=c[0];
          coeff[1]=c[1];
-
-         vec=vec_t(2);
      }
 
-      double y( double x )
+      POS_1 y( POS_1 x )
      {
-         double x0=x-origin[0];
+         POS_1 x0=x-origin[0];
          return  coeff[0]*x0*x0 + coeff[1]*x0 + origin[1];
      }
 
-      void tangent( double x, double dy[2] )
+      void tangent( POS_1 x, POS_2 &dy )
      {
-         double x0=x-origin[0];
+         POS_1 x0=x-origin[0];
          dy[0]=1.;
          dy[1]= 2*coeff[0]*x0 + coeff[1];
-         vec.unit( dy );
+         dy/=length(dy);
      }
 
-      void normal( double x, double n[2] )
+      void normal( POS_1 x, POS_2 &n )
      {
          tangent( x, n );
-         double t=n[0];
+         POS_1 t=n[0];
          n[0]=-n[1];
          n[1]= t;
      }
@@ -52,12 +50,12 @@
 
    int main()
   {
-      const int      npts  = 1500;
+      const int      npts  = 150;
       const int      ntest = 15;
       const int      nplot = 51;
 
-      const double   origin[2]={0.,0.};
-      const double   coeff[2] ={1.,0.};
+      vtx_t     origin(0.,0.,0.);
+      double   coeff[2] ={1.,0.};
 
       const double   scale=0.01;
 
@@ -65,49 +63,34 @@
       const double   ymin=-1., ymax=10.;
 
       int         i,j;
-      double       **x=NULL;
-      double       **n=NULL;
-      double      **nt=NULL;
-      double     **xt0=NULL;
-      double     **xt1=NULL;
-      double     **xt2=NULL;
+      vtx_t       *x=NULL;
+      vtx_t       *n=NULL;
+      vtx_t      *nt=NULL;
+      vtx_t     *xt0=NULL;
+      vtx_t     *xt1=NULL;
+      vtx_t     *xt2=NULL;
+      double    *scales=NULL;
 
       double    s, ds, off;
       double   dx, dy, xp,yp;
       double   accuracy=10e-8;
-      double   *v=NULL, *w=NULL;
+      vtx_t    v, w;
 
-      vec_t         vec(DIMS);
-      rbf_f        *rbf=NULL;
-      quadratic_t   quad( origin, coeff );
-
-      rbf= new rbf_biharmonic;
-//    rbf= new rbf_triharmonic();
-//    rbf= new rbf_multiquadratic(scale);
-//    rbf= new rbf_invmultiquadratic(scale);
-//    rbf= new rbf_thinplate(scale);
-//    rbf= new rbf_gaussian(scale);
-
+      quadratic_surf_t<vtx_t,double>  quad( origin, coeff );
 
    // initialise random number generator
       srand( 42 );
 
    // allocate arrays
-      v   = new double [DIMS];
-      w   = new double [DIMS];
-      x   = new double*[npts ];
-      n   = new double*[npts ];
-      nt  = new double*[ntest];
-      xt0 = new double*[ntest];
-      xt1 = new double*[ntest];
-      xt2 = new double*[ntest];
-
-      for( i=0; i<npts;  i++ ){ x[  i]=NULL; x[  i] = new double[DIMS]; }
-      for( i=0; i<npts;  i++ ){ n[  i]=NULL; n[  i] = new double[DIMS]; }
-      for( i=0; i<ntest; i++ ){ nt[ i]=NULL; nt[ i] = new double[DIMS]; }
-      for( i=0; i<ntest; i++ ){ xt0[i]=NULL; xt0[i] = new double[DIMS]; }
-      for( i=0; i<ntest; i++ ){ xt1[i]=NULL; xt1[i] = new double[DIMS]; }
-      for( i=0; i<ntest; i++ ){ xt2[i]=NULL; xt2[i] = new double[DIMS]; }
+     {
+      x   = new vtx_t [npts ];
+      n   = new vtx_t [npts ];
+      nt  = new vtx_t [ntest];
+      xt0 = new vtx_t [ntest];
+      xt1 = new vtx_t [ntest];
+      xt2 = new vtx_t [ntest];
+      scales=new double[npts];
+     }
 
    // build point/normal cloud
       dx = ( xmax - xmin )/( npts -1 );
@@ -118,6 +101,8 @@
          x[i][1]=quad.y(s);
          quad.normal( x[i][0], n[i] );
          s+=dx;
+
+         scales[i]=scale;
      }
 
    // points to test surface reconstruction at
@@ -135,7 +120,6 @@
       j=1;
       off=0.5;
    // build points xt1 to test from
-   // points are displaced normal off the surface by a random amount
    // x1[i] should project back to x0[i]
       for( i=0; i<ntest; i++ )
      {
@@ -143,16 +127,13 @@
          s=off;
 //       s = j*( rand() % 100 ) / 100; s*=off;
 
-         vec.mul( v, s, nt[i] );
-
-         vec.add( xt1[i], xt0[i], v );
+         xt1[i]=xt0[i]+s*nt[i];
 
          j*=-1;
      }
 
-
    // build implicit surface interpolation
-      rbf_surf surface( DIMS, npts, x, n, scale, accuracy, rbf );
+      rbf_surf<2, vtx_t, double> surface( npts, x, n, scales, accuracy );
       i = surface.build_weights();
       std::cout << "lapack info: " << i << std::endl << std::endl;
 
@@ -194,8 +175,9 @@
       std::cout << std::scientific;
       for( i=0; i<ntest; i++ )
      {
-         vec.sub( v, xt0[i], xt2[i] );
-         ds=vec.length( v )/off;
+         v  = xt0[i] - xt2[i];
+         ds = length( v )/off;
+
          s=surface.F( xt2[i] );
 
          std::cout << ds << ", " << s << ", (" << v[0] << ", " << v[1] << ")" << std::endl;
@@ -203,24 +185,13 @@
 
 
    // deallocate pointers
-      for( i=0; i<npts;  i++ ){ delete[] x[  i]; x[  i]=NULL; }
-      for( i=0; i<npts;  i++ ){ delete[] n[  i]; n[  i]=NULL; }
-      for( i=0; i<ntest; i++ ){ delete[] nt[ i]; nt[ i]=NULL; }
-      for( i=0; i<ntest; i++ ){ delete[] xt0[i]; xt0[i]=NULL; }
-      for( i=0; i<ntest; i++ ){ delete[] xt1[i]; xt1[i]=NULL; }
-      for( i=0; i<ntest; i++ ){ delete[] xt2[i]; xt2[i]=NULL; }
-
-      delete[]  v;    v=NULL;
-      delete[]  w;    w=NULL;
       delete[]  x;    x=NULL;
       delete[]  n;    n=NULL;
       delete[] nt;   nt=NULL;
       delete[] xt0; xt0=NULL;
       delete[] xt1; xt1=NULL;
       delete[] xt2; xt2=NULL;
-
-      delete  rbf; rbf=NULL;
-
+      delete[] scales; scales=NULL;
 
       return 0;
   }

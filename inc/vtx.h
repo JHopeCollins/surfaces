@@ -2,8 +2,12 @@
 #  define _VTX_
 
 #  include <typd.h>
-#  include <cstring>
 #  include <cmath>
+#  include <cstring>
+
+#  include <q2.h>
+
+   inline int indx( int i, int j, int n ){ return i*n+j; }
 
    struct vtx_t
   {
@@ -30,7 +34,6 @@
          return *this;
      };
    
-   
       inline vtx_t &operator*=( REAL_ a  )
      {
          x[0]*=a;
@@ -47,7 +50,7 @@
          x[2]*=b;
          return *this;
      };
-      
+
   };
 
 
@@ -63,6 +66,18 @@
          ref=0;
          memset( y,-1,sizeof(REAL_2));
      };
+  };
+
+   inline vtx_t operator*( vtx_t a, REAL_ b )
+  {
+      vtx_t val( a[0]*b, a[1]*b, a[2]*b );
+      return val;
+  };
+
+   inline vtx_t operator-( vtx_t a )
+  {
+      vtx_t val( -a[0], -a[1], -a[2] );
+      return val;
   };
 
    inline vtx_t operator*( REAL_ a, vtx_t b )
@@ -108,18 +123,6 @@
       return a[0]*b[0]+a[1]*b[1]+ a[2]*b[2];
   };
 
-
-   inline vtx_t operator*( vtx_t a, REAL_ b )
-  {
-      vtx_t val( a[0]*b, a[1]*b, a[2]*b );
-      return val;
-  };
-
-/* inline vtx_t operator*( vtx_t a, INT_ b )
-  {
-      vtx_t val( a[0]*b, a[1]*b, a[2]*b );
-      return val;
-  };*/
 
 
    inline vtx_t cross( vtx_t a, vtx_t b )
@@ -213,6 +216,7 @@
       
   };
 
+/*
    struct aprj_t
   {
       INT_        it;
@@ -228,7 +232,7 @@
 
       aprj_t()
      {
-         tol=1.e-16;
+         tol=1.e-14;
          mit=10;
          d=0;
          b[0]=0;
@@ -262,7 +266,7 @@
 
       INT_    j;
 
-      rlx= 0.5;
+      rlx= 0.2;
 
       for( j=0;j<stat.mit;j++ )
      {
@@ -325,6 +329,135 @@
          err= fabs(b[0])+ fabs(b[1]);
          if( err < stat.tol ){ break; };
 
+         rlx*= 1.1;
+         rlx= fmin( rlx,1. );
+
+//       printf( "%2d % 9.3e % 9.3e % 9.3e % 9.3e % 9.3e\n", j, d, y[0],y[1], b[0],b[1] );
+
+     }
+      stat.a[0]= a[0];
+      stat.a[1]= a[1];
+      stat.a[2]= a[2];
+
+      stat.x   = x;
+
+      stat.b[0]= b[0];
+      stat.b[1]= b[1];
+
+      stat.d=    d;
+
+      stat.err=  err;
+      stat.it=   j;
+
+      return;
+  };
+
+   inline void aprj( vtx_t &x0, vtx_t &x1, vtx_t &x2, 
+                     vtx_t &x3, vtx_t &x4, vtx_t &x5, 
+                     vtx_t &x6, vtx_t &x7, vtx_t &x8, vtx_t &p, REAL_ *y, aprj_t &stat )
+  {
+      REAL_   q0[9];
+      REAL_2  q1[9];
+      REAL_3  q2[9];
+
+      REAL_   rlx;
+      REAL_   err;
+
+      REAL_    d;
+      REAL_    b[2];
+      REAL_    a[3];
+
+      vtx_t    dx[2];
+      vtx_t   d2x[3];
+
+      vtx_t   x;
+      vtx_t   r;
+
+      INT_    j;
+
+      rlx= 0.2;
+
+      for( j=0;j<stat.mit;j++ )
+     {
+
+// Bilinear shape function
+
+//       q0[0]= (1-y[0])*(1-y[1]);
+//       q0[1]=    y[0] *(1-y[1]);
+//       q0[2]= (1-y[0])*   y[1] ;
+//       q0[3]=    y[0] *   y[1] ;
+
+//       q1[0][0]= -(1-y[1]); q1[1][0]= -(1-y[0]);
+//       q1[0][1]=  (1-y[1]); q1[1][1]=    -y[0] ;
+//       q1[0][2]=    -y[1] ; q1[1][2]=  (1-y[0]);
+//       q1[0][3]=     y[1] ; q1[1][3]=     y[0] ;
+
+//       q2[0]=  1;
+//       q2[1]= -1;
+//       q2[2]= -1;
+//       q2[3]=  1;
+
+         q22( y[0],y[1], q0,q1,q2 );
+
+// Position
+         x= q0[0]*x0+ q0[1]*x1+ q0[2]*x2+ 
+            q0[3]*x3+ q0[4]*x4+ q0[5]*x5+ 
+            q0[6]*x6+ q0[7]*x7+ q0[8]*x8;
+
+// Tangent vectors
+         dx[0]= q1[0][0]*x0+ q1[1][0]*x1+ q1[2][0]*x2+ 
+                q1[3][0]*x3+ q1[4][0]*x4+ q1[5][0]*x5+ 
+                q1[6][0]*x6+ q1[7][0]*x7+ q1[8][0]*x8;
+
+         dx[1]= q1[0][1]*x0+ q1[1][1]*x1+ q1[2][1]*x2+ 
+                q1[3][1]*x3+ q1[4][1]*x4+ q1[5][1]*x5+ 
+                q1[6][1]*x6+ q1[7][1]*x7+ q1[8][1]*x8;
+
+// Curvature tensor
+
+         d2x[0]= q2[0][0]*x0+ q2[1][0]*x1+ q2[2][0]*x2+ 
+                 q2[3][0]*x3+ q2[4][0]*x4+ q2[5][0]*x5+ 
+                 q2[6][0]*x6+ q2[7][0]*x7+ q2[8][0]*x8;
+            
+         d2x[1]= q2[0][1]*x0+ q2[1][1]*x1+ q2[2][1]*x2+ 
+                 q2[3][1]*x3+ q2[4][1]*x4+ q2[5][1]*x5+ 
+                 q2[6][1]*x6+ q2[7][1]*x7+ q2[8][1]*x8;
+            
+         d2x[2]= q2[0][2]*x0+ q2[1][2]*x1+ q2[2][2]*x2+ 
+                 q2[3][2]*x3+ q2[4][2]*x4+ q2[5][2]*x5+ 
+                 q2[6][2]*x6+ q2[7][2]*x7+ q2[8][2]*x8;
+
+         r= x-p;
+
+// Distance
+         d=  r*r;
+         d*= 0.5;
+
+// Derivative of distance wrt parametric coordinates
+
+         b[0]= r*dx[0];
+         b[1]= r*dx[1];
+
+// Second derivatives
+
+         a[0]=  dx[0]*dx[0]+ d2x[0]*r;
+         a[1]=  dx[0]*dx[1]+ d2x[2]*r;
+         a[2]=  dx[1]*dx[1]+ d2x[1]*r;
+
+// LDL' factorization and solution
+
+         ldl2( a,b );
+
+// Newton update
+
+         y[0]-= rlx*b[0];
+         y[1]-= rlx*b[1];
+
+// Convergence criterion
+
+         err= fabs(b[0])+ fabs(b[1]);
+         if( err < stat.tol ){ break; };
+
          rlx*= 1.2;
          rlx= fmin( rlx,1. );
 
@@ -347,5 +480,6 @@
 
       return;
   }
+*/
 
 #  endif

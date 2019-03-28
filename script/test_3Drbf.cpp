@@ -26,30 +26,21 @@
       const double   ymin=-3., ymax=3.;
       const double   zmin=-0., zmax=30.;
 
-      int             i,j,k,np;
-      double       **x=NULL;
-      double       **n=NULL;
-      double      **nt=NULL;
-      double     **xt0=NULL;
-      double     **xt1=NULL;
-      double     **xt2=NULL;
-      double   *scales=NULL;
+      int        i,j,k,np;
+      vtx_t       *x=NULL;
+      vtx_t       *n=NULL;
+      vtx_t      *nt=NULL;
+      vtx_t     *xt0=NULL;
+      vtx_t     *xt1=NULL;
+      vtx_t     *xt2=NULL;
+      double *scales=NULL;
 
-      double           s, ds, rx, ry, off,RoC;
-      double   dx,dy,dz, xp,yp,zp;
-      double       accuracy=10e-10;
-      double     *u=NULL, *v=NULL, *w=NULL;
+      double  s, ds, rx, ry, off,RoC;
+      double      dx,dy,dz, xp,yp,zp;
+      double         accuracy=10e-10;
+      vtx_t                  u, v, w;
 
-      vec_t         vec(DIMS);
-      rbf_f          *rbf=NULL;
       pseudo3surf_t *surf=NULL;
-
-//    rbf= new rbf_biharmonic();
-      rbf= new rbf_triharmonic();
-//    rbf= new rbf_multiquadratic(scale);
-//    rbf= new rbf_invmultiquadratic(scale);
-//    rbf= new rbf_thinplate(scale);
-//    rbf= new rbf_gaussian(scale);
 
       surf= new quadratic_t(1.,1.,1.,2.,1.,-1.);
 //    surf= new sinusoid_t( 1.,0.00,1.,0.10);
@@ -60,23 +51,13 @@
 
    // allocate arrays
      {
-      u   = new double [DIMS];
-      v   = new double [DIMS];
-      w   = new double [DIMS];
-      x   = new double*[npts2 ];
-      n   = new double*[npts2 ];
-      nt  = new double*[ntest2];
-      xt0 = new double*[ntest2];
-      xt1 = new double*[ntest2];
-      xt2 = new double*[ntest2];
+      x   = new vtx_t [npts2 ];
+      n   = new vtx_t [npts2 ];
+      nt  = new vtx_t [ntest2];
+      xt0 = new vtx_t [ntest2];
+      xt1 = new vtx_t [ntest2];
+      xt2 = new vtx_t [ntest2];
       scales=new double[npts2];
-
-      for( i=0; i<npts2;  i++ ){ x[  i]=NULL; x[  i] = new double[DIMS]; }
-      for( i=0; i<npts2;  i++ ){ n[  i]=NULL; n[  i] = new double[DIMS]; }
-      for( i=0; i<ntest2; i++ ){ nt[ i]=NULL; nt[ i] = new double[DIMS]; }
-      for( i=0; i<ntest2; i++ ){ xt0[i]=NULL; xt0[i] = new double[DIMS]; }
-      for( i=0; i<ntest2; i++ ){ xt1[i]=NULL; xt1[i] = new double[DIMS]; }
-      for( i=0; i<ntest2; i++ ){ xt2[i]=NULL; xt2[i] = new double[DIMS]; }
      }
 
 
@@ -94,19 +75,19 @@
             x[k][0]=xmin+i*dx;
             x[k][1]=ymin+j*dy;
 
-            x[k][2]=(*surf).F( x[k] );
+            x[k][2]=surf->F( x[k][0], x[k][1] );
 
-           (*surf).normal( x[k], n[k] );
+            surf->normal( x[k].x, n[k].x );
 
          // local radius of curvature
-            s =(*surf).dFx(  x[k]);
-            ds=(*surf).d2Fxx(x[k]);
+            s =surf->dFx(   x[k][0], x[k][1] );
+            ds=surf->d2Fxx( x[k][0], x[k][1] );
 
             if( ds < EPS ){ rx=LARGE; }
             else{ rx = RadiusOfCurvature( s, ds ); }
 
-            s =(*surf).dFy(  x[k]);
-            ds=(*surf).d2Fyy(x[k]);
+            s =surf->dFy(   x[k][0], x[k][1] );
+            ds=surf->d2Fyy( x[k][0], x[k][1] );
 
             if( ds < EPS ){ ry=LARGE; }
             else{ ry = RadiusOfCurvature( s, ds ); }
@@ -135,9 +116,9 @@
             xt0[k][0]=xmin+(i+0.5)*dx;
             xt0[k][1]=ymin+(j+0.5)*dy;
 
-            xt0[k][2]=(*surf).F(xt0[k]);
+            xt0[k][2]=surf->F( xt0[k][0], xt0[k][1] );
 
-           (*surf).normal( xt0[k], nt[k] );
+            surf->normal( xt0[k].x, nt[k].x );
         }
      }
 
@@ -153,16 +134,14 @@
          s=off;
 //       s = j*( rand() % 100 ) / 100; s*=off;
 
-         vec.mul( v, s, nt[i] );
-
-         vec.add( xt1[i], xt0[i], v );
+         xt1[i] = xt0[i] + s*nt[i];
 
          j*=-1;
      }
 
 
    // build implicit surface interpolation
-      rbf_surf isurf( DIMS, npts2, x, n, scales, accuracy, rbf );
+      rbf_surf<3, vtx_t, double> isurf( npts2, x, n, scales, accuracy );
       i = isurf.build_weights();
       std::cout << "lapack info: " << i << std::endl << std::endl;
 
@@ -191,7 +170,7 @@
         {
             v[0]=xp;
             v[1]=yp;
-            v[2]=(*surf).F( v );
+            v[2]=surf->F( v[0], v[1] );
 
             ofile << v[0] << " " << v[1] << " " << v[2] << std::endl;
 
@@ -249,12 +228,12 @@
      {
          std::cout << "(" << xt0[i][0] << ", " << xt0[i][1] << ", " << xt0[i][2] << ") ";
 
-        (*surf).normal( xt0[i], u );
+         surf->normal( xt0[i].x, u.x );
          std::cout << "(" << u[0] << ", " << u[1] << ", " << u[2] << ") ";
-         isurf.dF( xt0[i], v );
+         isurf.dF( xt0[i], v.x );
          std::cout << "(" << v[0] << ", " << v[1] << ", " << v[2] << ")  ";
 
-         std::cout << vec.radius( u, v );
+         std::cout << length( u-v );
 
          std::cout << std::endl;
      }
@@ -265,8 +244,9 @@
       std::cout << "projection length errors and distance function" << std::endl;
       for( i=0; i<ntest2; i++ )
      {
-         vec.sub( v, xt0[i], xt2[i] );
-         ds=vec.length( v )/off;
+         v = xt0[i] - xt2[i];
+         ds=length( v )/off;
+
          s=isurf.F( xt2[i] );
 
          std::cout << ds << ", " << s << ", (" << v[0] << ", " << v[1] << ", " << v[2] << ")" << std::endl;
@@ -276,16 +256,6 @@
 
    // deallocate pointers
      {
-      for( i=0; i<npts2;  i++ ){ delete[] x[  i]; x[  i]=NULL; }
-      for( i=0; i<npts2;  i++ ){ delete[] n[  i]; n[  i]=NULL; }
-      for( i=0; i<ntest2; i++ ){ delete[] nt[ i]; nt[ i]=NULL; }
-      for( i=0; i<ntest2; i++ ){ delete[] xt0[i]; xt0[i]=NULL; }
-      for( i=0; i<ntest2; i++ ){ delete[] xt1[i]; xt1[i]=NULL; }
-      for( i=0; i<ntest2; i++ ){ delete[] xt2[i]; xt2[i]=NULL; }
-
-      delete[]  u;    u=NULL;
-      delete[]  v;    v=NULL;
-      delete[]  w;    w=NULL;
       delete[]  x;    x=NULL;
       delete[]  n;    n=NULL;
       delete[] nt;   nt=NULL;
@@ -294,7 +264,6 @@
       delete[] xt2; xt2=NULL;
       delete[] scales; scales=NULL;
 
-      delete  rbf;  rbf=NULL;
       delete surf; surf=NULL;
      }
 

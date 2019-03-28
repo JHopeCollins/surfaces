@@ -8,25 +8,22 @@ SCRIPTDIR = script/#		main() function source files
 PROGRMDIR = progrm/#		executables
 
 # Class / function definition source files
-CSOURCE = vec.cpp \
-		 pseudosurf.cpp \
-		 rbf_interp.cpp \
-		 rbf_surf.cpp \
-		 surf2.cpp \
-		 surf.cpp \
-		 ssurf.cpp
+CSOURCE = pseudosurf.cpp \
+			 surf2.cpp \
+			 ssurf.cpp
 
 # main() function files
 CSCRIPT = test_rbf.cpp \
-        test_rbf_grad.cpp \
-        test_2Drbf.cpp \
-        test_3Drbf.cpp \
-        test_sharpbranch.cpp \
-        test_filletbranch.cpp \
-		  pointcloud_2Dprofile.cpp \
-		  pointcloud_3Dprofile.cpp \
-        reconstruct_2Dprofile.cpp \
-        reconstruct_3Dprofile.cpp
+			 test_rbf_grad.cpp \
+        	 test_2Drbf.cpp \
+        	 test_3Drbf.cpp \
+        	 test_sharpbranch.cpp \
+        	 test_filletbranch.cpp \
+        	 test_filletpass.cpp \
+		  	 pointcloud_2Dprofile.cpp \
+		  	 pointcloud_3Dprofile.cpp \
+        	 reconstruct_2Dprofile.cpp \
+        	 reconstruct_3Dprofile.cpp
 
 CCMP = g++
 
@@ -69,7 +66,6 @@ all.o : $(SOURCEOBJ)
 	ld -r $^ -o $@
 
 # each executable depends on its own object file, and all source objects
-
 $(PROGRM) : $(PROGRMDIR)%.out : $(SCRIPTDIR)%.o $(SOURCEOBJ)
 	$(CCMP) $(COPT) $(INCLDE) -o $@ $^ $(LIBS)
 
@@ -87,6 +83,9 @@ all: $(PROGRM)
 
 # make source objects
 obj: $(SOURCEOBJ)
+
+#-------------------------------------
+# command recipes
 
 # create required directories
 mkdir:

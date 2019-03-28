@@ -13,27 +13,16 @@
       double      xmin=-1.5, xmax=1.25;
       double      ymin=-2.25, ymax=1.0;
       double      dx,dy, z;
-      double      x[2];
+      vtx_t       x;
 
       int         nplot=81;
       int         ntest=36;
 
-      vec_t vec(DIMS);
-      rbf_f *rbf=NULL;
-
-//    rbf= new rbf_biharmonic();
-      rbf= new rbf_triharmonic();
-//    rbf= new rbf_multiquadratic(scale);
-//    rbf= new rbf_invmultiquadratic(scale);
-//    rbf= new rbf_thinplate(scale);
-//    rbf= new rbf_gaussian(scale);
-
-      rbf_surf isurf;
+      rbf_surf<2, vtx_t, double> isurf;
 
 
    // build surface
       isurf.accuracy=EPS;
-      isurf.set_RadialBasisFunction( rbf );
       isurf.fread( (char*)"data/pointclouds/profile2D" );
 
       i=isurf.build_weights();
@@ -48,6 +37,7 @@
       f=fopen( "data/pointclouds/profile2Ddistance", "w" );
       dx=(xmax-xmin)/(nplot-1);
       dy=(ymax-ymin)/(nplot-1);
+      x[2]=0.;
       for( i=0; i<nplot; i++ )
      {
          x[0]=xmin+i*dx;
@@ -62,29 +52,23 @@
 
 
    // test projections
-      double **xt=NULL;
       ntest=isurf.m;
-      xt=new double*[ntest];
-      for( i=0; i<ntest; i++ ){ xt[i]=NULL; xt[i]=new double[DIMS]; }
-
+      vtx_t *xt=new vtx_t [ntest], yt;
       double r=1.5;
-      double   *yt=new double[DIMS];
    // generate points outside blade profile and project points onto blade profile
       for( i=0; i<ntest; i++ )
      {
          j=3*i;
-         yt[0]=isurf.pt[j][0] + r*isurf.scales[i]*isurf.norm[i][0];
-         yt[1]=isurf.pt[j][1] + r*isurf.scales[i]*isurf.norm[i][1];
 
-         xt[i][0]=yt[0];
-         xt[i][1]=yt[1];
+         yt    = isurf.pt[j] + r*isurf.scales[i]*isurf.norm[i];
+         xt[i] = yt;
 
          std::cout << "(" << xt[i][0] << ", " << xt[i][1] << ") ";
 
          isurf.project( xt[i], xt[i] );
 
          std::cout << "(" <<       xt[i][0] << ", " <<       xt[i][1] << ") " << std::endl;
-         std::cout << "(" << isurf.pt[j][0] << ", " << isurf.pt[j][1] << ") " << vec.radius( xt[i], yt )/isurf.scales[i] << std::endl;
+         std::cout << "(" << isurf.pt[j][0] << ", " << isurf.pt[j][1] << ") " << length( xt[i] - yt )/isurf.scales[i] << std::endl;
      }
 
 
@@ -94,10 +78,7 @@
       fclose( f );
 
 
-      for( i=0;i<ntest; i++ ){ delete[] xt[i]; xt[i]=NULL; }
       delete[] xt;  xt=NULL;
-      delete[] yt;  yt=NULL;
-      delete  rbf; rbf=NULL;
 
       return 0;
   }

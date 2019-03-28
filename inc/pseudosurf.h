@@ -5,7 +5,7 @@
 // virtual base for surface in 3D space defined by x and y coordinates (non-overlapping z)
    struct pseudo3surf_t : public vec_t
   {
-      pseudo3surf_t(){ dims=3; construct_levi_civita(); }
+      pseudo3surf_t(){ dims=3; }
 
       virtual ~pseudo3surf_t(){}
 

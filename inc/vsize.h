@@ -59,18 +59,17 @@
        };
 
 /** Copy constructor **/
-
-        vsize_t &operator=( vsize_t data )
+/*      vsize_t &operator=( vsize_t data )
        {
            clear();
            n= data.n; resize( data[0]);
            assert( m == data.m );
            memcpy( v,data.v, m*sizeof(type) );
            return *this;
-       }
+       }*/
 
 
-/*      void copy( vsize_t data )
+        void copy( vsize_t data )
        {
 //         clear();
            n= data.n; resize( data[0] );
@@ -78,7 +77,7 @@
 //         memcpy( v,data.v, m*sizeof(type) );
 //         for( INT_ i=0;i<n;i++ ){ v[i]= data[i]; };
            return;
-       };*/
+       };
    
 /** Constructor **/
 
